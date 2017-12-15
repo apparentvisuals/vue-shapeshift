@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "es2015",
+    "moduleResolution": "node",
+    "target": "es6",
+    "strict": true,
+    "declaration": true,
+    "experimentalDecorators": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "removeComments": true
+  },
+  "include": ["src/**/*.ts"],
+  "compileOnSave": false
+}
