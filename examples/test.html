@@ -1,6 +1,7 @@
 <html>
 
 <head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.35/css/uikit.min.css" />
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vue"></script>
   <script type="text/javascript" src="vue-shapeshift.js"></script>
 </head>
@@ -10,22 +11,25 @@
     <ss-auto-form v-bind:schema="schema" v-bind:ui-schema="uiSchema"></ss-auto-form>
   </div>
   <script type="text/javascript">
-    console.log(VueShapeshift);
     Vue.use(VueShapeshift);
     new Vue({
       el: '#app',
       data() {
-        console.log('data');
         return {
           schema: {
             properties: {
               name: {
-                type: 'string'
+                type: 'string',
+                name: 'Name'
+              },
+              test: {
+                type: 'boolean',
+                name: 'Check It!'
               }
             }
           },
           uiSchema: {
-            order: ['name']
+            order: ['name', 'test']
           }
         }
       }

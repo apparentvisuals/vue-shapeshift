@@ -2,6 +2,14 @@
 # yarn lockfile v1
 
 
+"@shapeshift/core@git+ssh://git@github.com/shapeshiftjs/shapeshift-core.git#develop":
+  version "0.1.0"
+  resolved "git+ssh://git@github.com/shapeshiftjs/shapeshift-core.git#07270b3b6adae26d8bf03a089f76e865dd79c566"
+
+"@shapeshift/vue-shapeshift-uikit@git+ssh://git@github.com/shapeshiftjs/vue-shapeshift-uikit.git#master":
+  version "0.0.0"
+  resolved "git+ssh://git@github.com/shapeshiftjs/vue-shapeshift-uikit.git#5b124569f1229dc7d3b3c48f8833887534d7d7cd"
+
 "@types/json-schema@^6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-6.0.0.tgz#5842b43db9d199a2dabf6fe52b6d09200e8203bc"

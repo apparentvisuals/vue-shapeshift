@@ -1,6 +1,22 @@
 import Vue from 'vue';
 
-var SSAutoFrom = Vue.extend({render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_vm._l((_vm.uiSchema.order),function(property){return [(_vm.schema.properties[property].type === 'boolean')?_c('div',{key:property},[_c('v-checkbox',{attrs:{"color":"primary","label":_vm.schema.properties[property].title,"rules":_vm.rules[property],"required":_vm.schema.required && _vm.schema.required.indexOf(property) > -1},model:{value:(_vm.value[property]),callback:function ($$v) {_vm.$set(_vm.value, property, $$v);},expression:"value[property]"}})],1):(_vm.schema.properties[property].type === 'number')?_c('div',{key:property},[_c('v-text-field',{attrs:{"box":"","label":_vm.schema.properties[property].title,"rules":_vm.rules[property],"required":_vm.schema.required && _vm.schema.required.indexOf(property) > -1},model:{value:(_vm.value[property]),callback:function ($$v) {_vm.$set(_vm.value, property, $$v);},expression:"value[property]"}})],1):[(_vm.schema.properties[property].format === 'date')?_c('div',{key:property},[_c('v-menu',{attrs:{"lazy":"","close-on-content-click":false,"transition":"scale-transition","offset-y":""},model:{value:(_vm.triggers[property]),callback:function ($$v) {_vm.$set(_vm.triggers, property, $$v);},expression:"triggers[property]"}},[_c('v-text-field',{attrs:{"slot":"activator","box":"","readonly":"readonly","label":_vm.schema.properties[property].title,"required":_vm.schema.required && _vm.schema.required.indexOf(property) > -1},slot:"activator",model:{value:(_vm.value[property]),callback:function ($$v) {_vm.$set(_vm.value, property, $$v);},expression:"value[property]"}}),_vm._v(" "),_c('v-date-picker',{attrs:{"autosave":""},model:{value:(_vm.value[property]),callback:function ($$v) {_vm.$set(_vm.value, property, $$v);},expression:"value[property]"}})],1)],1):(_vm.schema.properties[property].format === 'email')?_c('div',{key:property},[_c('v-text-field',{attrs:{"box":"","label":_vm.schema.properties[property].title,"rules":_vm.rules[property],"required":_vm.schema.required && _vm.schema.required.indexOf(property) > -1},model:{value:(_vm.value[property]),callback:function ($$v) {_vm.$set(_vm.value, property, $$v);},expression:"value[property]"}})],1):_c('div',{key:property},[_c('ss-text-field')],1)]]})],2)},staticRenderFns: [],
+class Shapeshift {
+    constructor(schema, uiSchema) {
+        this.schema = schema;
+        this.uiSchema = uiSchema;
+    }
+    forEach(func) {
+        if (this.uiSchema &&
+            this.uiSchema.order &&
+            Array.isArray(this.uiSchema.order)) {
+            this.uiSchema.order.forEach(value => {
+                func(value, this.schema.properties[value], this.uiSchema[value]);
+            });
+        }
+    }
+}
+
+const SSAutoForm$1 = Vue.extend({
     props: {
         schema: {
             type: Object,
@@ -15,20 +31,95 @@ var SSAutoFrom = Vue.extend({render: function(){var _vm=this;var _h=_vm.$createE
             required: true
         }
     },
-    data: function () {
+    data() {
         return {
             triggers: {}
         };
+    },
+    render(createElement) {
+        let shapeshift = new Shapeshift(this.schema, this.uiSchema);
+        let fields = [];
+        shapeshift.forEach((name, schema, uiSchema) => {
+            switch (schema.type) {
+                case 'boolean':
+                    fields.push(createElement('ss-checkbox', {
+                        props: {
+                            schema,
+                            uiSchema
+                        }
+                    }));
+                    break;
+                default:
+                    fields.push(createElement('ss-text-field', {
+                        props: {
+                            schema,
+                            uiSchema
+                        }
+                    }));
+                    break;
+            }
+        });
+        return createElement('form', fields);
     }
 });
 
-var SSTextField$1 = Vue.extend({render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _vm._m(0)},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',[_c('input',{attrs:{"type":"text"}})])}],});
+const SSTextField$1 = Vue.extend({
+    props: {
+        schema: {
+            type: Object,
+            required: true
+        },
+        uiSchema: {
+            type: Object,
+            require: false
+        }
+    },
+    render(createElement) {
+        const label = createElement('label', [this.schema.name]);
+        const input = createElement('input', {
+            attrs: {
+                type: 'text',
+                class: 'uk-input'
+            }
+        });
+        return createElement('div', {
+            attrs: {
+                class: 'uk-margin'
+            }
+        }, [label, input]);
+    }
+});
 
-var ShapeshiftPlugin = {
-    install: function (Vue$$1, options) {
-        console.log('Initialize components');
-        Vue$$1.component('ss-auto-form', SSAutoFrom);
+const SSCheckbox$1 = Vue.extend({
+    props: {
+        schema: {
+            type: Object
+        },
+        uiSchema: {
+            type: Object
+        }
+    },
+    render(createElement) {
+        const input = createElement('input', {
+            attrs: {
+                type: 'checkbox',
+                class: 'uk-checkbox'
+            }
+        });
+        const label = createElement('label', {}, [input, this.schema.name]);
+        return createElement('div', {
+            attrs: {
+                class: 'uk-margin'
+            }
+        }, [label]);
+    }
+});
+
+const ShapeshiftPlugin = {
+    install(Vue$$1, options) {
         Vue$$1.component('ss-text-field', SSTextField$1);
+        Vue$$1.component('ss-checkbox', SSCheckbox$1);
+        Vue$$1.component('ss-auto-form', SSAutoForm$1);
     }
 };
 

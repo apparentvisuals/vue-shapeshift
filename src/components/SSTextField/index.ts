@@ -1,2 +1,2 @@
-import SSTextField from './SSTextField.vue';
+import SSTextField from './SSTextField';
 export default SSTextField;

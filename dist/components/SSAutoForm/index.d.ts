@@ -1,2 +1,2 @@
-import SSAutoForm from './SSAutoForm.vue';
+import SSAutoForm from './SSAutoForm';
 export default SSAutoForm;

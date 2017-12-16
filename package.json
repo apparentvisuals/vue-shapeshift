@@ -22,6 +22,9 @@
     "url": "https://github.com/shapeshiftjs/vue-shapeshift/issues"
   },
   "homepage": "https://github.com/shapeshiftjs/vue-shapeshift#readme",
+  "dependencies": {
+    "@shapeshift/core": "git+ssh://git@github.com/shapeshiftjs/shapeshift-core.git#develop"
+  },
   "peerDependencies": {
     "vue": "^2.5.0"
   },

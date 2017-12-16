@@ -1,5 +1,6 @@
+import resolve from 'rollup-plugin-node-resolve';
+import commonjs from 'rollup-plugin-commonjs';
 import typescript from 'rollup-plugin-typescript2';
-import vue from 'rollup-plugin-vue';
 import pkg from './package.json';
 
 export default [
@@ -11,12 +12,7 @@ export default [
       { file: pkg.module, format: 'es' }
     ],
     external: ['vue'],
-    plugins: [
-      vue({
-        css: 'dist/vue-shapeshift.css'
-      }),
-      typescript()
-    ]
+    plugins: [resolve(), typescript()]
   },
   {
     input: './src/index.ts',
@@ -27,9 +23,17 @@ export default [
       vue: 'Vue'
     },
     plugins: [
-      vue(),
+      resolve({
+        module: false
+      }),
+      commonjs(),
       typescript({
-        declaration: false
+        tsconfigOverride: {
+          compilerOptions: {
+            declaration: false,
+            target: 'es5'
+          }
+        }
       })
     ]
   }
