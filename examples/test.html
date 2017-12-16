@@ -1,0 +1,36 @@
+<html>
+
+<head>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vue"></script>
+  <script type="text/javascript" src="vue-shapeshift.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <ss-auto-form v-bind:schema="schema" v-bind:ui-schema="uiSchema"></ss-auto-form>
+  </div>
+  <script type="text/javascript">
+    console.log(VueShapeshift);
+    Vue.use(VueShapeshift);
+    new Vue({
+      el: '#app',
+      data() {
+        console.log('data');
+        return {
+          schema: {
+            properties: {
+              name: {
+                type: 'string'
+              }
+            }
+          },
+          uiSchema: {
+            order: ['name']
+          }
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
