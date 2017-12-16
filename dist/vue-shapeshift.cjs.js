@@ -94,13 +94,17 @@ const SSTextField$1 = Vue.extend({
     }
 });
 
+SSTextField$1['componentName'] = 'ss-text-field';
+
 const SSCheckbox$1 = Vue.extend({
     props: {
         schema: {
-            type: Object
+            type: Object,
+            required: true
         },
         uiSchema: {
-            type: Object
+            type: Object,
+            required: false
         }
     },
     render(createElement) {
@@ -110,19 +114,56 @@ const SSCheckbox$1 = Vue.extend({
                 class: 'uk-checkbox'
             }
         });
-        const label = createElement('label', {}, [input, this.schema.name]);
+        const label = createElement('label', {}, [input, ' ' + this.schema.name]);
         return createElement('div', {
             attrs: {
-                class: 'uk-margin'
+                class: 'uk-margin uk-grid-small uk-child-width-auto uk-grid'
             }
         }, [label]);
     }
 });
 
+SSCheckbox$1['componentName'] = 'ss-checkbox';
+
+const SSRange$1 = Vue.extend({
+    props: {
+        schema: {
+            type: Object,
+            required: true
+        },
+        uiSchema: {
+            type: Object,
+            require: false
+        }
+    },
+    render(createElement) {
+        const label = createElement('label', [this.schema.name]);
+        const input = createElement('input', {
+            attrs: {
+                type: 'range',
+                class: 'uk-range'
+            }
+        });
+        return createElement('div', {
+            attrs: {
+                class: 'uk-margin'
+            }
+        }, [label, input]);
+    }
+});
+
+SSRange$1['componentName'] = 'ss-range';
+
+const defaultComponents = [SSTextField$1, SSCheckbox$1, SSRange$1];
 const ShapeshiftPlugin = {
     install(Vue$$1, options) {
-        Vue$$1.component('ss-text-field', SSTextField$1);
-        Vue$$1.component('ss-checkbox', SSCheckbox$1);
+        let components = defaultComponents;
+        if (options && options.components) {
+            components = options.components;
+        }
+        components.forEach(component => {
+            Vue$$1.component(component['componentName'], component);
+        });
         Vue$$1.component('ss-auto-form', SSAutoForm$1);
     }
 };

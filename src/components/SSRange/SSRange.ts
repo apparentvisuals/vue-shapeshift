@@ -1,6 +1,6 @@
 import Vue, { VueConstructor } from 'vue';
 
-const SSCheckbox = Vue.extend({
+const SSRange = Vue.extend({
   props: {
     schema: {
       type: Object,
@@ -8,28 +8,27 @@ const SSCheckbox = Vue.extend({
     },
     uiSchema: {
       type: Object,
-      required: false
+      require: false
     }
   },
   render(createElement) {
+    const label = createElement('label', [this.schema.name]);
     const input = createElement('input', {
       attrs: {
-        type: 'checkbox',
-        class: 'uk-checkbox'
+        type: 'range',
+        class: 'uk-range'
       }
     });
-
-    const label = createElement('label', {}, [input, ' ' + this.schema.name]);
 
     return createElement(
       'div',
       {
         attrs: {
-          class: 'uk-margin uk-grid-small uk-child-width-auto uk-grid'
+          class: 'uk-margin'
         }
       },
-      [label]
+      [label, input]
     );
   }
 });
-export default SSCheckbox;
+export default SSRange;
