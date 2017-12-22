@@ -1,33 +1,26 @@
 import Vue, { VueConstructor } from 'vue';
+import { Shapeshift } from '@shapeshift/core';
 
 const SSTextField = Vue.extend({
   props: {
-    schema: {
-      type: Object,
-      required: true
+    ss: {
+      type: Shapeshift,
+      required: true,
     },
-    uiSchema: {
-      type: Object,
-      require: false
-    }
   },
   render(createElement) {
-    const label = createElement('label', [this.schema.name]);
     const input = createElement('input', {
       attrs: {
         type: 'text',
-        class: 'uk-input'
+        class: 'uk-input',
+        placeholder: this.ss.schema.title,
       }
     });
 
     return createElement(
       'div',
-      {
-        attrs: {
-          class: 'uk-margin'
-        }
-      },
-      [label, input]
+      { attrs: { class: 'uk-margin' } },
+      [input]
     );
   }
 });

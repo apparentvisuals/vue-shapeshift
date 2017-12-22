@@ -1,22 +1,25 @@
 import Vue, { VueConstructor } from 'vue';
-import { Shapeshift } from '@shapeshift/core';
 
-const SSCheckbox = Vue.extend({
+const SSRadio = Vue.extend({
   props: {
-    ss: {
-      type: Shapeshift,
+    schema: {
+      type: Object,
       required: true
+    },
+    uiSchema: {
+      type: Object,
+      required: false
     }
   },
   render(createElement) {
     const input = createElement('input', {
       attrs: {
-        type: 'checkbox',
-        class: 'uk-checkbox'
+        type: 'radio',
+        class: 'uk-radio'
       }
     });
 
-    const label = createElement('label', {}, [input, ' ' + this.ss.schema.title]);
+    const label = createElement('label', {}, [input, ' ' + this.schema.name]);
 
     return createElement(
       'div',
@@ -29,4 +32,4 @@ const SSCheckbox = Vue.extend({
     );
   }
 });
-export default SSCheckbox;
+export default SSRadio;

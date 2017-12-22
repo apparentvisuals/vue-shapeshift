@@ -1,6 +1,7 @@
 import Vue, { VueConstructor } from 'vue';
 import { Shapeshift } from '@shapeshift/core';
-declare const SSCheckbox: VueConstructor<{
+declare const SSFieldSet: VueConstructor<{
+    name: string;
     ss: Shapeshift;
 } & Vue>;
-export default SSCheckbox;
+export default SSFieldSet;

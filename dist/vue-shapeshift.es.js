@@ -1,18 +1,303 @@
 import Vue from 'vue';
 
+var DataType;
+(function (DataType) {
+    DataType.STRING = 'string';
+    DataType.OBJECT = 'object';
+    DataType.BOOL = 'boolean';
+    DataType.NUMBER = 'number';
+    DataType.INTEGER = 'integer';
+    DataType.NULL = 'null';
+    DataType.ARRAY = 'array';
+})(DataType || (DataType = {}));
+
 class Shapeshift {
     constructor(schema, uiSchema) {
+        if (typeof schema !== DataType.OBJECT || schema === null || Array.isArray(uiSchema)) {
+            throw new Error('JSON Schema must be an object');
+        }
+        if (uiSchema !== undefined && uiSchema !== null && (typeof uiSchema !== DataType.OBJECT || Array.isArray(uiSchema))) {
+            throw new Error('UI Schema must be an object');
+        }
         this.schema = schema;
-        this.uiSchema = uiSchema;
+        this.uiSchema = uiSchema || {};
+        this.type = schema.type;
+        if (this.uiSchema && this.uiSchema.widget) {
+            this.widget = this.uiSchema.widget;
+        }
+        else {
+            switch (this.type) {
+                case 'string':
+                case 'number':
+                case 'integer':
+                    this.widget = 'textfield';
+                    break;
+                case 'boolean':
+                    this.widget = 'checkbox';
+                    break;
+                case 'object':
+                    this.widget = 'fieldset';
+                    break;
+                default:
+                    this.widget = 'hidden';
+                    break;
+            }
+        }
     }
     forEach(func) {
-        if (this.uiSchema &&
-            this.uiSchema.order &&
-            Array.isArray(this.uiSchema.order)) {
-            this.uiSchema.order.forEach(value => {
-                func(value, this.schema.properties[value], this.uiSchema[value]);
-            });
+        const schema = this.schema;
+        const uiSchema = this.uiSchema;
+        if (typeof schema !== DataType.OBJECT || schema === null || schema.type !== DataType.OBJECT ||
+            typeof schema.properties !== DataType.OBJECT || schema.properties === null) {
+            return;
         }
+        if (!Array.isArray(uiSchema.order)) {
+            const properties = schema.properties;
+            Object.keys(properties).forEach(key => {
+                func(key, new Shapeshift(properties[key]));
+            });
+            return;
+        }
+        uiSchema.order.forEach(value => {
+            if (schema.properties && schema.properties[value]) {
+                if (uiSchema.properties) {
+                    func(value, new Shapeshift(schema.properties[value], uiSchema.properties[value]));
+                }
+                else {
+                    func(value, new Shapeshift(schema.properties[value]));
+                }
+            }
+        });
+    }
+}
+
+function isNumber(data) {
+    return typeof data === DataType.NUMBER && data !== NaN;
+}
+function isInteger(data) {
+    return isNumber(data) && isMultipleOf(data, 1);
+}
+function isGreaterThan(data, value, exclusive = false) {
+    if (!isNumber(data)) {
+        throw new Error('data is not a number');
+    }
+    if (!isNumber(value)) {
+        throw new Error('value is not an number');
+    }
+    if (exclusive) {
+        return data > value;
+    }
+    else {
+        return data >= value;
+    }
+}
+function isLessThan(data, value, exclusive = false) {
+    if (!isNumber(data)) {
+        throw new Error('data is not a number');
+    }
+    if (!isNumber(value)) {
+        throw new Error('value is not an number');
+    }
+    if (exclusive) {
+        return data < value;
+    }
+    else {
+        return data <= value;
+    }
+}
+function isMultipleOf(data, value) {
+    if (!isNumber(data)) {
+        throw new Error('data is not a number');
+    }
+    if (!isNumber(value)) {
+        throw new Error('value is not an number');
+    }
+    return data % value === 0;
+}
+
+function isString(data) {
+    return typeof data === DataType.STRING;
+}
+function isMinLength(data, length) {
+    if (!isString(data)) {
+        throw new Error('data is not a string');
+    }
+    if (!isInteger(length)) {
+        throw new Error('length is not an integer');
+    }
+    return data.length >= length;
+}
+function isMaxLength(data, length) {
+    if (!isString(data)) {
+        throw new Error('data is not a string');
+    }
+    if (!isInteger(length)) {
+        throw new Error('length is not an integer');
+    }
+    return data.length <= length;
+}
+function matchPattern(data, pattern) {
+    if (!isString(data)) {
+        throw new Error('data is not a string');
+    }
+    if (!isString(pattern)) {
+        throw new Error('pattern is not a string');
+    }
+    let regex = new RegExp(pattern);
+    return regex.test(data);
+}
+
+function isObject(data) {
+    return typeof data === DataType.OBJECT && data !== null && !Array.isArray(data);
+}
+
+function isBoolean(data) {
+    return typeof data === DataType.BOOL;
+}
+
+function isArray(data) {
+    return Array.isArray(data);
+}
+
+function validate$$1(schema, data) {
+    if (!isObject(schema)) {
+        throw new Error('schema is not defined');
+    }
+    if (data === undefined) {
+        throw new Error('data is not defined');
+    }
+    let validators = [];
+    switch (schema.type) {
+        case DataType.STRING:
+            validators.push(validateString$$1(schema, data));
+            break;
+        case DataType.NUMBER:
+            validators.push(validateNumber$$1(schema, data));
+            break;
+        case DataType.INTEGER:
+            validators.push(validateInteger$$1(schema, data));
+            break;
+        case DataType.BOOL:
+            validators.push(validateBoolean$$1(schema, data));
+            break;
+        case DataType.OBJECT:
+            validators.push(validateObject$$1(schema, data));
+            break;
+        case DataType.ARRAY:
+            validators.push(validateArray$$1(schema, data));
+            break;
+        case DataType.NULL:
+            validators.push(data === null);
+            break;
+        default:
+            validators.push(true);
+            break;
+    }
+    if (schema.enum) {
+        validators.push(validateValueIn$$1(schema.enum, data));
+    }
+    return validators.every(result => {
+        return result;
+    });
+}
+function validateString$$1(schema, data) {
+    if (!isString(data)) {
+        return false;
+    }
+    let validators = [];
+    if (schema.minLength) {
+        validators.push(isMinLength(data, schema.minLength));
+    }
+    if (schema.maxLength) {
+        validators.push(isMaxLength(data, schema.maxLength));
+    }
+    if (schema.pattern) {
+        validators.push(matchPattern(data, schema.pattern));
+    }
+    return validators.every(result => {
+        return result;
+    });
+}
+function validateInteger$$1(schema, data) {
+    if (isInteger(data)) {
+        return validateNumber$$1(schema, data);
+    }
+    return false;
+}
+function validateNumber$$1(schema, data) {
+    if (!isNumber(data)) {
+        return false;
+    }
+    let validators = [];
+    if (schema.minimum) {
+        let exclusive = schema.exclusiveMinimum || false;
+        validators.push(isGreaterThan(data, schema.minimum, exclusive));
+    }
+    if (schema.maximum) {
+        let exclusive = schema.exclusiveMaximum || false;
+        validators.push(isLessThan(data, schema.maximum, exclusive));
+    }
+    if (schema.multipleOf) {
+        validators.push(isMultipleOf(data, schema.multipleOf));
+    }
+    return validators.every(result => {
+        return result;
+    });
+}
+function validateArray$$1(schema, data) {
+    return isArray(data);
+}
+function validateObject$$1(schema, data) {
+    return isObject(data);
+}
+function validateBoolean$$1(schema, data) {
+    return isBoolean(data);
+}
+function validateValueIn$$1(values, data) {
+    if (!Array.isArray(values) || values.length === 0) {
+        return false;
+    }
+    return values.indexOf(data) > -1;
+}
+
+
+var index = Object.freeze({
+	validate: validate$$1,
+	validateString: validateString$$1,
+	validateInteger: validateInteger$$1,
+	validateNumber: validateNumber$$1,
+	validateArray: validateArray$$1,
+	validateObject: validateObject$$1,
+	validateBoolean: validateBoolean$$1,
+	validateValueIn: validateValueIn$$1
+});
+
+function shapeshift(schema, uiSchema) {
+    return new Shapeshift(schema, uiSchema);
+}
+
+function getElement(createElement, ss, name) {
+    switch (ss.widget) {
+        case 'checkbox':
+            return createElement('ss-checkbox', {
+                props: {
+                    ss,
+                }
+            });
+        case 'fieldset':
+            return createElement('ss-field-set', {
+                props: {
+                    name,
+                    ss,
+                }
+            });
+        case 'textfield':
+        default:
+            return createElement('ss-text-field', {
+                props: {
+                    ss,
+                }
+            });
     }
 }
 
@@ -37,62 +322,59 @@ const SSAutoForm$1 = Vue.extend({
         };
     },
     render(createElement) {
-        let shapeshift = new Shapeshift(this.schema, this.uiSchema);
-        let fields = [];
-        shapeshift.forEach((name, schema, uiSchema) => {
-            switch (schema.type) {
-                case 'boolean':
-                    fields.push(createElement('ss-checkbox', {
-                        props: {
-                            schema,
-                            uiSchema
-                        }
-                    }));
-                    break;
-                default:
-                    fields.push(createElement('ss-text-field', {
-                        props: {
-                            schema,
-                            uiSchema
-                        }
-                    }));
-                    break;
-            }
-        });
-        return createElement('form', fields);
+        let ss = shapeshift(this.schema, this.uiSchema);
+        let children = [getElement(createElement, ss)];
+        return createElement('form', children);
     }
 });
 
 const SSTextField$1 = Vue.extend({
     props: {
-        schema: {
-            type: Object,
-            required: true
+        ss: {
+            type: Shapeshift,
+            required: true,
         },
-        uiSchema: {
-            type: Object,
-            require: false
-        }
     },
     render(createElement) {
-        const label = createElement('label', [this.schema.name]);
         const input = createElement('input', {
             attrs: {
                 type: 'text',
-                class: 'uk-input'
+                class: 'uk-input',
+                placeholder: this.ss.schema.title,
             }
         });
-        return createElement('div', {
-            attrs: {
-                class: 'uk-margin'
-            }
-        }, [label, input]);
+        return createElement('div', { attrs: { class: 'uk-margin' } }, [input]);
     }
 });
 
 SSTextField$1['componentName'] = 'ss-text-field';
 
 const SSCheckbox$1 = Vue.extend({
+    props: {
+        ss: {
+            type: Shapeshift,
+            required: true
+        }
+    },
+    render(createElement) {
+        const input = createElement('input', {
+            attrs: {
+                type: 'checkbox',
+                class: 'uk-checkbox'
+            }
+        });
+        const label = createElement('label', {}, [input, ' ' + this.ss.schema.title]);
+        return createElement('div', {
+            attrs: {
+                class: 'uk-margin uk-grid-small uk-child-width-auto uk-grid'
+            }
+        }, [label]);
+    }
+});
+
+SSCheckbox$1['componentName'] = 'ss-checkbox';
+
+const SSRadio$1 = Vue.extend({
     props: {
         schema: {
             type: Object,
@@ -106,8 +388,8 @@ const SSCheckbox$1 = Vue.extend({
     render(createElement) {
         const input = createElement('input', {
             attrs: {
-                type: 'checkbox',
-                class: 'uk-checkbox'
+                type: 'radio',
+                class: 'uk-radio'
             }
         });
         const label = createElement('label', {}, [input, ' ' + this.schema.name]);
@@ -119,21 +401,17 @@ const SSCheckbox$1 = Vue.extend({
     }
 });
 
-SSCheckbox$1['componentName'] = 'ss-checkbox';
+SSRadio$1['componentName'] = 'ss-radio';
 
 const SSRange$1 = Vue.extend({
     props: {
-        schema: {
-            type: Object,
-            required: true
-        },
-        uiSchema: {
-            type: Object,
-            require: false
+        ss: {
+            type: Shapeshift,
+            require: true
         }
     },
     render(createElement) {
-        const label = createElement('label', [this.schema.name]);
+        const label = createElement('label', this.ss.schema.title);
         const input = createElement('input', {
             attrs: {
                 type: 'range',
@@ -150,7 +428,38 @@ const SSRange$1 = Vue.extend({
 
 SSRange$1['componentName'] = 'ss-range';
 
-const defaultComponents = [SSTextField$1, SSCheckbox$1, SSRange$1];
+const SSFieldSet$1 = Vue.extend({
+    props: {
+        name: { type: String },
+        ss: {
+            type: Shapeshift,
+            required: true
+        }
+    },
+    render(createElement) {
+        let children = [];
+        if (this.ss.schema.title) {
+            children.push(createElement('legend', {
+                attrs: {
+                    class: 'uk-legend',
+                }
+            }, this.ss.schema.title));
+        }
+        this.ss.forEach((name, ss) => {
+            children.push(getElement(createElement, ss, name));
+        });
+        return createElement('fieldset', {
+            attrs: {
+                name: this.name,
+                class: 'uk-fieldset',
+            }
+        }, children);
+    }
+});
+
+SSFieldSet$1['componentName'] = 'ss-field-set';
+
+const defaultComponents = [SSTextField$1, SSCheckbox$1, SSRange$1, SSRadio$1, SSFieldSet$1];
 const ShapeshiftPlugin = {
     install(Vue$$1, options) {
         let components = defaultComponents;

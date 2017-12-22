@@ -1,5 +1,6 @@
 import Vue, { VueConstructor, VNode } from 'vue';
-import { Shapeshift } from '@shapeshift/core';
+import { shapeshift, Shapeshift } from '@shapeshift/core';
+import { getElement } from '../utils';
 
 const SSAutoForm = Vue.extend({
   props: {
@@ -22,33 +23,9 @@ const SSAutoForm = Vue.extend({
     };
   },
   render(createElement) {
-    let shapeshift = new Shapeshift(this.schema, this.uiSchema);
-    let fields: VNode[] = [];
-    shapeshift.forEach((name, schema, uiSchema) => {
-      switch (schema.type) {
-        case 'boolean':
-          fields.push(
-            createElement('ss-checkbox', {
-              props: {
-                schema,
-                uiSchema
-              }
-            })
-          );
-          break;
-        default:
-          fields.push(
-            createElement('ss-text-field', {
-              props: {
-                schema,
-                uiSchema
-              }
-            })
-          );
-          break;
-      }
-    });
-    return createElement('form', fields);
+    let ss = shapeshift(this.schema, this.uiSchema);
+    let children = [getElement(createElement, ss)];
+    return createElement('form', children);
   }
 });
 export default SSAutoForm;
