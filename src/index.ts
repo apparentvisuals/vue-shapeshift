@@ -5,11 +5,12 @@ import {
   SSRange,
   SSRadio,
   SSFieldSet,
+  SSTextArea,
 } from './components';
 import { PluginObject } from 'vue';
 import { VueConstructor } from 'vue/types/vue';
 
-const defaultComponents = [SSTextField, SSCheckbox, SSRange, SSRadio, SSFieldSet];
+const defaultComponents = [SSTextField, SSCheckbox, SSRange, SSRadio, SSFieldSet, SSTextArea];
 
 const ShapeshiftPlugin: PluginObject<any> = {
   install(Vue, options) {

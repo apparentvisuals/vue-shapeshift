@@ -12,24 +12,9 @@ const SSRadio = Vue.extend({
     }
   },
   render(createElement) {
-    const input = createElement('input', {
-      attrs: {
-        type: 'radio',
-        class: 'uk-radio'
-      }
-    });
-
+    const input = createElement('input', { attrs: { type: 'radio' } });
     const label = createElement('label', {}, [input, ' ' + this.schema.name]);
-
-    return createElement(
-      'div',
-      {
-        attrs: {
-          class: 'uk-margin uk-grid-small uk-child-width-auto uk-grid'
-        }
-      },
-      [label]
-    );
+    return createElement('div', [label]);
   }
 });
 export default SSRadio;

@@ -17,6 +17,7 @@ var DataType;
 
 class Shapeshift {
     constructor(schema, uiSchema) {
+        this.depth = 0;
         if (typeof schema !== DataType.OBJECT || schema === null || Array.isArray(uiSchema)) {
             throw new Error('JSON Schema must be an object');
         }
@@ -56,22 +57,28 @@ class Shapeshift {
             return;
         }
         if (!Array.isArray(uiSchema.order)) {
-            const properties = schema.properties;
-            Object.keys(properties).forEach(key => {
-                func(key, new Shapeshift(properties[key]));
+            Object.keys(schema.properties).forEach(key => {
+                const ss = this.getNestedValue(key, schema, uiSchema);
+                func(key, ss);
             });
             return;
         }
-        uiSchema.order.forEach(value => {
-            if (schema.properties && schema.properties[value]) {
-                if (uiSchema.properties) {
-                    func(value, new Shapeshift(schema.properties[value], uiSchema.properties[value]));
-                }
-                else {
-                    func(value, new Shapeshift(schema.properties[value]));
-                }
+        uiSchema.order.forEach(key => {
+            if (schema.properties && schema.properties[key]) {
+                const ss = this.getNestedValue(key, schema, uiSchema);
+                func(key, ss);
             }
         });
+    }
+    getNestedValue(key, schema, uiSchema) {
+        let property = schema.properties[key];
+        let uiProperty = undefined;
+        if (uiSchema && uiSchema.properties) {
+            uiProperty = uiSchema.properties[key];
+        }
+        let ss = new Shapeshift(property, uiProperty);
+        ss.depth = this.depth + 1;
+        return ss;
     }
 }
 
@@ -280,33 +287,124 @@ function shapeshift(schema, uiSchema) {
     return new Shapeshift(schema, uiSchema);
 }
 
+function getRootElement(createElement, ss) {
+    console.log('form(root)');
+    if (ss.type === 'object') {
+        let children = [];
+        ss.forEach((name, ss) => {
+            children.push(getElement.call(this, createElement, ss, name));
+        });
+        return children;
+    }
+    else {
+        return [getElement.call(this, createElement, ss)];
+    }
+}
 function getElement(createElement, ss, name) {
+    ssDebug(ss, name);
+    let self = this;
     switch (ss.widget) {
         case 'checkbox':
             return createElement('ss-checkbox', {
+                domProps: {
+                    value: name ? self.nestedValue[name] : self.nestedValue
+                },
                 props: {
                     ss,
+                },
+                on: {
+                    input: function (event) {
+                        console.log(event);
+                        if (name) {
+                            self.$set(self.nestedValue, name, event);
+                        }
+                        else {
+                            self.nestedValue = event;
+                        }
+                        self.$emit('input', self.nestedValue);
+                    }
                 }
             });
         case 'fieldset':
             return createElement('ss-field-set', {
+                domProps: {
+                    value: name ? self.nestedValue[name] : self.nestedValue
+                },
                 props: {
                     name,
                     ss,
+                },
+                on: {
+                    input: function (event) {
+                        if (name) {
+                            self.$set(self.nestedValue, name, event);
+                        }
+                        else {
+                            self.nestedValue = event;
+                        }
+                        self.$emit('input', self.nestedValue);
+                    }
+                }
+            });
+        case 'textarea':
+            return createElement('ss-text-area', {
+                domProps: {
+                    value: name ? self.nestedValue[name] : self.nestedValue
+                },
+                props: {
+                    ss,
+                },
+                on: {
+                    input: function (event) {
+                        if (name) {
+                            self.$set(self.nestedValue, name, event);
+                        }
+                        else {
+                            self.nestedValue = event;
+                        }
+                        self.$emit('input', self.nestedValue);
+                    }
                 }
             });
         case 'textfield':
         default:
             return createElement('ss-text-field', {
+                domProps: {
+                    value: name ? self.nestedValue[name] : self.nestedValue
+                },
                 props: {
                     ss,
+                },
+                on: {
+                    input: function (event) {
+                        if (name) {
+                            self.$set(self.nestedValue, name, event);
+                        }
+                        else {
+                            self.nestedValue = event;
+                        }
+                        self.$emit('input', self.nestedValue);
+                    }
                 }
             });
     }
 }
+function ssDebug(ss, name) {
+    let level = Array(ss.depth + 1).join(' ') + '|-';
+    let message = '';
+    let type = `(${ss.widget})`;
+    if (name) {
+        message = name + type;
+    }
+    else {
+        message = type;
+    }
+    console.log(level, message);
+}
 
 const SSAutoForm$1 = Vue.extend({
     props: {
+        value: [Object, String, Number],
         schema: {
             type: Object,
             required: true
@@ -314,40 +412,62 @@ const SSAutoForm$1 = Vue.extend({
         uiSchema: {
             type: Object,
             required: true
-        },
-        value: {
-            type: Object,
-            required: true
         }
     },
     data() {
         return {
-            triggers: {}
+            nestedValue: this.value || {}
         };
+    },
+    watch: {
+        value(newValue) {
+            this.nestedValue = newValue;
+        }
     },
     render(createElement) {
         let ss = shapeshift(this.schema, this.uiSchema);
-        let children = [getElement(createElement, ss)];
+        let children = getRootElement.call(this, createElement, ss);
         return createElement('form', children);
     }
 });
 
 const SSTextField$1 = Vue.extend({
     props: {
+        value: [String, Number],
         ss: {
             type: Shapeshift,
             required: true,
         },
     },
+    data() {
+        return {
+            nestedValue: this.value,
+        };
+    },
+    watch: {
+        value(newValue) {
+            this.nestedValue = newValue;
+        }
+    },
     render(createElement) {
+        const self = this;
+        const listeners = Object.assign({}, this.$listeners);
         const input = createElement('input', {
+            domProps: {
+                value: this.nestedValue,
+            },
             attrs: {
                 type: 'text',
-                class: 'uk-input',
                 placeholder: this.ss.schema.title,
-            }
+            },
+            on: Object.assign(listeners, {
+                input: function (event) {
+                    self.nestedValue = event.target.value;
+                    self.$emit('input', self.nestedValue);
+                }
+            }),
         });
-        return createElement('div', { attrs: { class: 'uk-margin' } }, [input]);
+        return createElement('div', [input]);
     }
 });
 
@@ -355,24 +475,39 @@ SSTextField$1['componentName'] = 'ss-text-field';
 
 const SSCheckbox$1 = Vue.extend({
     props: {
+        value: [Boolean],
         ss: {
             type: Shapeshift,
             required: true
         }
     },
+    data() {
+        return {
+            nestedValue: !!this.value
+        };
+    },
+    watch: {
+        value(newValue) {
+            this.nestedValue = newValue;
+        }
+    },
     render(createElement) {
+        const self = this;
+        const listeners = Object.assign({}, this.$listeners);
         const input = createElement('input', {
-            attrs: {
-                type: 'checkbox',
-                class: 'uk-checkbox'
-            }
+            domProps: {
+                value: this.nestedValue
+            },
+            attrs: { type: 'checkbox' },
+            on: Object.assign(listeners, {
+                input: function (event) {
+                    self.nestedValue = event.target.checked;
+                    self.$emit('input', self.nestedValue);
+                }
+            }),
         });
         const label = createElement('label', {}, [input, ' ' + this.ss.schema.title]);
-        return createElement('div', {
-            attrs: {
-                class: 'uk-margin uk-grid-small uk-child-width-auto uk-grid'
-            }
-        }, [label]);
+        return createElement('div', [label]);
     }
 });
 
@@ -390,18 +525,9 @@ const SSRadio$1 = Vue.extend({
         }
     },
     render(createElement) {
-        const input = createElement('input', {
-            attrs: {
-                type: 'radio',
-                class: 'uk-radio'
-            }
-        });
+        const input = createElement('input', { attrs: { type: 'radio' } });
         const label = createElement('label', {}, [input, ' ' + this.schema.name]);
-        return createElement('div', {
-            attrs: {
-                class: 'uk-margin uk-grid-small uk-child-width-auto uk-grid'
-            }
-        }, [label]);
+        return createElement('div', [label]);
     }
 });
 
@@ -416,17 +542,8 @@ const SSRange$1 = Vue.extend({
     },
     render(createElement) {
         const label = createElement('label', this.ss.schema.title);
-        const input = createElement('input', {
-            attrs: {
-                type: 'range',
-                class: 'uk-range'
-            }
-        });
-        return createElement('div', {
-            attrs: {
-                class: 'uk-margin'
-            }
-        }, [label, input]);
+        const input = createElement('input', { attrs: { type: 'range' } });
+        return createElement('div', [label, input]);
     }
 });
 
@@ -434,36 +551,79 @@ SSRange$1['componentName'] = 'ss-range';
 
 const SSFieldSet$1 = Vue.extend({
     props: {
+        value: Object,
         name: { type: String },
         ss: {
             type: Shapeshift,
             required: true
         }
     },
+    data() {
+        return {
+            nestedValue: this.value || {}
+        };
+    },
+    watch: {
+        value(newValue) {
+            this.nestedValue = newValue;
+        }
+    },
     render(createElement) {
         let children = [];
         if (this.ss.schema.title) {
-            children.push(createElement('legend', {
-                attrs: {
-                    class: 'uk-legend',
-                }
-            }, this.ss.schema.title));
+            children.push(createElement('legend', this.ss.schema.title));
         }
         this.ss.forEach((name, ss) => {
-            children.push(getElement(createElement, ss, name));
+            children.push(getElement.call(this, createElement, ss, name));
         });
-        return createElement('fieldset', {
-            attrs: {
-                name: this.name,
-                class: 'uk-fieldset',
-            }
-        }, children);
+        return createElement('fieldset', { attrs: { name: this.name } }, children);
     }
 });
 
 SSFieldSet$1['componentName'] = 'ss-field-set';
 
-const defaultComponents = [SSTextField$1, SSCheckbox$1, SSRange$1, SSRadio$1, SSFieldSet$1];
+const SSTextArea$1 = Vue.extend({
+    props: {
+        value: [String, Number],
+        ss: {
+            type: Shapeshift,
+            required: true,
+        }
+    },
+    data() {
+        return {
+            nestedValue: this.value
+        };
+    },
+    watch: {
+        value(newValue) {
+            this.nestedValue = newValue;
+        }
+    },
+    render(createElement) {
+        const self = this;
+        const listeners = Object.assign({}, this.$listeners);
+        const input = createElement('textarea', {
+            domProps: {
+                value: this.nestedValue
+            },
+            attrs: {
+                placeholder: this.ss.schema.title,
+            },
+            on: Object.assign(listeners, {
+                input: function (event) {
+                    self.nestedValue = event.target.value;
+                    self.$emit('input', self.nestedValue);
+                }
+            }),
+        });
+        return createElement('div', [input]);
+    }
+});
+
+SSTextArea$1['componentName'] = 'ss-text-area';
+
+const defaultComponents = [SSTextField$1, SSCheckbox$1, SSRange$1, SSRadio$1, SSFieldSet$1, SSTextArea$1];
 const ShapeshiftPlugin = {
     install(Vue$$1, options) {
         let components = defaultComponents;

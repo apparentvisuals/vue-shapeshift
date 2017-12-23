@@ -1,0 +1,211 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.35/css/uikit.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.35/js/uikit.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.35/js/uikit-icons.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.12.0/build/styles/default.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.12.0/build/highlight.min.js"></script>
+  <style>
+    pre {
+      border: 0px;
+      background: #f8f8f8;
+    }
+
+    code {
+      background: none !important;
+    }
+
+    fieldset {
+      border: 1px #e0e0e0 solid !important;
+      padding: 5px !important;
+    }
+
+    legend {
+      width: auto !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="uk-padding">
+    <h1>Simple schema</h1>
+    <div class="uk-card uk-card-default uk-card-hover uk-card-body">
+      <div uk-grid class="uk-child-width-1-4">
+        <div>
+          <pre><code>{{ JSON.stringify(schema1, null, 2) }}</code></pre>
+        </div>
+        <div>
+          <pre><code>{{ JSON.stringify(uiSchema1, null, 2) }}</code></pre>
+        </div>
+        <div>
+          <ss-auto-form :schema="schema1" :ui-schema="uiSchema1" v-model="values1"></ss-auto-form>
+        </div>
+        <div>
+          {{ JSON.stringify(values1) }}
+        </div>
+      </div>
+    </div>
+    <h1>Multiple widget types</h1>
+    <div class="uk-card uk-card-default uk-card-hover uk-card-body">
+      <div uk-grid class="uk-child-width-1-4">
+        <div>
+          <pre><code>{{ JSON.stringify(schema2, null, 2) }}</code></pre>
+        </div>
+        <div>
+          <pre><code>{{ JSON.stringify(uiSchema2, null, 2) }}</code></pre>
+        </div>
+        <div>
+          <ss-auto-form :schema="schema2" :ui-schema="uiSchema2" v-model="values2"></ss-auto-form>
+        </div>
+        <div>
+          {{ JSON.stringify(values2) }}
+        </div>
+      </div>
+    </div>
+    <h1>Mixed schema</h1>
+    <div class="uk-card uk-card-default uk-card-hover uk-card-body">
+      <div uk-grid class="uk-child-width-1-4">
+        <div>
+          <pre><code>{{ JSON.stringify(schema, null, 2) }}</code></pre>
+        </div>
+        <div>
+          <pre><code>{{ JSON.stringify(uiSchema, null, 2) }}</code></pre>
+        </div>
+        <div>
+          <ss-auto-form :schema="schema" :ui-schema="uiSchema" v-model="values"></ss-auto-form>
+        </div>
+        <div>
+          {{ JSON.stringify(values) }}
+        </div>
+      </div>
+    </div>
+    <h1>Nested schema</h1>
+    <div class="uk-card uk-card-default uk-card-hover uk-card-body">
+      <div uk-grid class="uk-child-width-1-4">
+        <div>
+          <pre><code>{{ JSON.stringify(schema3, null, 2) }}</code></pre>
+        </div>
+        <div>
+          <pre><code>{{ JSON.stringify(uiSchema3, null, 2) }}</code></pre>
+        </div>
+        <div>
+          <ss-auto-form :schema="schema3" :ui-schema="uiSchema3" v-model="values3"></ss-auto-form>
+        </div>
+        <div>
+          {{ JSON.stringify(values3) }}
+        </div>
+      </div>
+    </div>
+    <!-- <div class="uk-button-group">
+      <button class="uk-button uk-button-default">-</button>
+      <input class="uk-input">
+      <button class="uk-button uk-button-default">+</button>
+    </div> -->
+  </div>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vue"></script>
+  <script type="text/javascript" src="vue-shapeshift.js"></script>
+  <script type="text/javascript ">
+    hljs.initHighlightingOnLoad();
+    Vue.config.devtools = true;
+    Vue.use(VueShapeshift);
+    new Vue({
+      el: '#app',
+      data() {
+        return {
+          schema1: {
+            title: 'Give me a name',
+            type: 'string'
+          },
+          uiSchema1: {
+            widget: 'textarea'
+          },
+          values1: null,
+          schema2: {
+            title: 'A variety of widgets',
+            type: 'object',
+            properties: {
+              text: {
+                type: 'string'
+              },
+              longText: {
+                type: 'string'
+              }
+            }
+          },
+          uiSchema2: {
+            properties: {
+              longText: {
+                widget: 'textarea'
+              }
+            }
+          },
+          values2: null,
+          schema3: {
+            type: 'object',
+            properties: {
+              contact: {
+                type: 'object',
+                title: 'Personal Information',
+                properties: {
+                  firstName: {
+                    type: 'string',
+                    title: 'First name',
+                  },
+                  lastName: {
+                    type: 'string',
+                    title: 'Last name',
+                  }
+                }
+              },
+              address: {
+                type: 'object',
+                title: 'Billing Address',
+                properties: {
+                  streetAddress: {
+                    type: 'string'
+                  },
+                  city: {
+                    type: 'string'
+                  },
+                  province: {
+                    type: 'string'
+                  }
+                }
+              }
+            }
+          },
+          uiSchema3: {},
+          values3: null,
+          schema: {
+            title: 'A Complex Form',
+            type: 'object',
+            properties: {
+              name: {
+                type: 'string',
+                title: 'Name'
+              },
+              test: {
+                type: 'boolean',
+                title: 'Check It!'
+              }
+            }
+          },
+          uiSchema: {
+            order: ['name', 'test']
+          },
+          values: null
+        }
+      },
+      watch: {
+        values1(newValue) {
+          console.log('values1', newValue);
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>

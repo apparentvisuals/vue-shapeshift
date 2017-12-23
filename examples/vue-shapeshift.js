@@ -26,6 +26,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var Shapeshift = (function () {
     function Shapeshift(schema, uiSchema) {
+        this.depth = 0;
         if (typeof schema !== exports.DataType.OBJECT || schema === null || Array.isArray(uiSchema)) {
             throw new Error('JSON Schema must be an object');
         }
@@ -58,6 +59,7 @@ var Shapeshift = (function () {
         }
     }
     Shapeshift.prototype.forEach = function (func) {
+        var _this = this;
         var schema = this.schema;
         var uiSchema = this.uiSchema;
         if (typeof schema !== exports.DataType.OBJECT || schema === null || schema.type !== exports.DataType.OBJECT ||
@@ -65,22 +67,28 @@ var Shapeshift = (function () {
             return;
         }
         if (!Array.isArray(uiSchema.order)) {
-            var properties_1 = schema.properties;
-            Object.keys(properties_1).forEach(function (key) {
-                func(key, new Shapeshift(properties_1[key]));
+            Object.keys(schema.properties).forEach(function (key) {
+                var ss = _this.getNestedValue(key, schema, uiSchema);
+                func(key, ss);
             });
             return;
         }
-        uiSchema.order.forEach(function (value) {
-            if (schema.properties && schema.properties[value]) {
-                if (uiSchema.properties) {
-                    func(value, new Shapeshift(schema.properties[value], uiSchema.properties[value]));
-                }
-                else {
-                    func(value, new Shapeshift(schema.properties[value]));
-                }
+        uiSchema.order.forEach(function (key) {
+            if (schema.properties && schema.properties[key]) {
+                var ss = _this.getNestedValue(key, schema, uiSchema);
+                func(key, ss);
             }
         });
+    };
+    Shapeshift.prototype.getNestedValue = function (key, schema, uiSchema) {
+        var property = schema.properties[key];
+        var uiProperty = undefined;
+        if (uiSchema && uiSchema.properties) {
+            uiProperty = uiSchema.properties[key];
+        }
+        var ss = new Shapeshift(property, uiProperty);
+        ss.depth = this.depth + 1;
+        return ss;
     };
     return Shapeshift;
 }());
@@ -303,33 +311,125 @@ var shapeshift_cjs_2 = shapeshift_cjs.shapeshift;
 var shapeshift_cjs_3 = shapeshift_cjs.Validators;
 var shapeshift_cjs_4 = shapeshift_cjs.Shapeshift;
 
+function getRootElement(createElement, ss) {
+    var _this = this;
+    console.log('form(root)');
+    if (ss.type === 'object') {
+        var children_1 = [];
+        ss.forEach(function (name, ss) {
+            children_1.push(getElement.call(_this, createElement, ss, name));
+        });
+        return children_1;
+    }
+    else {
+        return [getElement.call(this, createElement, ss)];
+    }
+}
 function getElement(createElement, ss, name) {
+    ssDebug(ss, name);
+    var self = this;
     switch (ss.widget) {
         case 'checkbox':
             return createElement('ss-checkbox', {
+                domProps: {
+                    value: name ? self.nestedValue[name] : self.nestedValue
+                },
                 props: {
                     ss: ss,
+                },
+                on: {
+                    input: function (event) {
+                        console.log(event);
+                        if (name) {
+                            self.$set(self.nestedValue, name, event);
+                        }
+                        else {
+                            self.nestedValue = event;
+                        }
+                        self.$emit('input', self.nestedValue);
+                    }
                 }
             });
         case 'fieldset':
             return createElement('ss-field-set', {
+                domProps: {
+                    value: name ? self.nestedValue[name] : self.nestedValue
+                },
                 props: {
                     name: name,
                     ss: ss,
+                },
+                on: {
+                    input: function (event) {
+                        if (name) {
+                            self.$set(self.nestedValue, name, event);
+                        }
+                        else {
+                            self.nestedValue = event;
+                        }
+                        self.$emit('input', self.nestedValue);
+                    }
+                }
+            });
+        case 'textarea':
+            return createElement('ss-text-area', {
+                domProps: {
+                    value: name ? self.nestedValue[name] : self.nestedValue
+                },
+                props: {
+                    ss: ss,
+                },
+                on: {
+                    input: function (event) {
+                        if (name) {
+                            self.$set(self.nestedValue, name, event);
+                        }
+                        else {
+                            self.nestedValue = event;
+                        }
+                        self.$emit('input', self.nestedValue);
+                    }
                 }
             });
         case 'textfield':
         default:
             return createElement('ss-text-field', {
+                domProps: {
+                    value: name ? self.nestedValue[name] : self.nestedValue
+                },
                 props: {
                     ss: ss,
+                },
+                on: {
+                    input: function (event) {
+                        if (name) {
+                            self.$set(self.nestedValue, name, event);
+                        }
+                        else {
+                            self.nestedValue = event;
+                        }
+                        self.$emit('input', self.nestedValue);
+                    }
                 }
             });
     }
 }
+function ssDebug(ss, name) {
+    var level = Array(ss.depth + 1).join(' ') + '|-';
+    var message = '';
+    var type = "(" + ss.widget + ")";
+    if (name) {
+        message = name + type;
+    }
+    else {
+        message = type;
+    }
+    console.log(level, message);
+}
 
 var SSAutoForm$1 = Vue.extend({
     props: {
+        value: [Object, String, Number],
         schema: {
             type: Object,
             required: true
@@ -337,40 +437,62 @@ var SSAutoForm$1 = Vue.extend({
         uiSchema: {
             type: Object,
             required: true
-        },
-        value: {
-            type: Object,
-            required: true
         }
     },
     data: function () {
         return {
-            triggers: {}
+            nestedValue: this.value || {}
         };
+    },
+    watch: {
+        value: function (newValue) {
+            this.nestedValue = newValue;
+        }
     },
     render: function (createElement) {
         var ss = shapeshift_cjs_2(this.schema, this.uiSchema);
-        var children = [getElement(createElement, ss)];
+        var children = getRootElement.call(this, createElement, ss);
         return createElement('form', children);
     }
 });
 
 var SSTextField$1 = Vue.extend({
     props: {
+        value: [String, Number],
         ss: {
             type: shapeshift_cjs_4,
             required: true,
         },
     },
+    data: function () {
+        return {
+            nestedValue: this.value,
+        };
+    },
+    watch: {
+        value: function (newValue) {
+            this.nestedValue = newValue;
+        }
+    },
     render: function (createElement) {
+        var self = this;
+        var listeners = Object.assign({}, this.$listeners);
         var input = createElement('input', {
+            domProps: {
+                value: this.nestedValue,
+            },
             attrs: {
                 type: 'text',
-                class: 'uk-input',
                 placeholder: this.ss.schema.title,
-            }
+            },
+            on: Object.assign(listeners, {
+                input: function (event) {
+                    self.nestedValue = event.target.value;
+                    self.$emit('input', self.nestedValue);
+                }
+            }),
         });
-        return createElement('div', { attrs: { class: 'uk-margin' } }, [input]);
+        return createElement('div', [input]);
     }
 });
 
@@ -378,24 +500,39 @@ SSTextField$1['componentName'] = 'ss-text-field';
 
 var SSCheckbox$1 = Vue.extend({
     props: {
+        value: [Boolean],
         ss: {
             type: shapeshift_cjs_4,
             required: true
         }
     },
+    data: function () {
+        return {
+            nestedValue: !!this.value
+        };
+    },
+    watch: {
+        value: function (newValue) {
+            this.nestedValue = newValue;
+        }
+    },
     render: function (createElement) {
+        var self = this;
+        var listeners = Object.assign({}, this.$listeners);
         var input = createElement('input', {
-            attrs: {
-                type: 'checkbox',
-                class: 'uk-checkbox'
-            }
+            domProps: {
+                value: this.nestedValue
+            },
+            attrs: { type: 'checkbox' },
+            on: Object.assign(listeners, {
+                input: function (event) {
+                    self.nestedValue = event.target.checked;
+                    self.$emit('input', self.nestedValue);
+                }
+            }),
         });
         var label = createElement('label', {}, [input, ' ' + this.ss.schema.title]);
-        return createElement('div', {
-            attrs: {
-                class: 'uk-margin uk-grid-small uk-child-width-auto uk-grid'
-            }
-        }, [label]);
+        return createElement('div', [label]);
     }
 });
 
@@ -413,18 +550,9 @@ var SSRadio$1 = Vue.extend({
         }
     },
     render: function (createElement) {
-        var input = createElement('input', {
-            attrs: {
-                type: 'radio',
-                class: 'uk-radio'
-            }
-        });
+        var input = createElement('input', { attrs: { type: 'radio' } });
         var label = createElement('label', {}, [input, ' ' + this.schema.name]);
-        return createElement('div', {
-            attrs: {
-                class: 'uk-margin uk-grid-small uk-child-width-auto uk-grid'
-            }
-        }, [label]);
+        return createElement('div', [label]);
     }
 });
 
@@ -439,17 +567,8 @@ var SSRange$1 = Vue.extend({
     },
     render: function (createElement) {
         var label = createElement('label', this.ss.schema.title);
-        var input = createElement('input', {
-            attrs: {
-                type: 'range',
-                class: 'uk-range'
-            }
-        });
-        return createElement('div', {
-            attrs: {
-                class: 'uk-margin'
-            }
-        }, [label, input]);
+        var input = createElement('input', { attrs: { type: 'range' } });
+        return createElement('div', [label, input]);
     }
 });
 
@@ -457,36 +576,80 @@ SSRange$1['componentName'] = 'ss-range';
 
 var SSFieldSet$1 = Vue.extend({
     props: {
+        value: Object,
         name: { type: String },
         ss: {
             type: shapeshift_cjs_4,
             required: true
         }
     },
+    data: function () {
+        return {
+            nestedValue: this.value || {}
+        };
+    },
+    watch: {
+        value: function (newValue) {
+            this.nestedValue = newValue;
+        }
+    },
     render: function (createElement) {
+        var _this = this;
         var children = [];
         if (this.ss.schema.title) {
-            children.push(createElement('legend', {
-                attrs: {
-                    class: 'uk-legend',
-                }
-            }, this.ss.schema.title));
+            children.push(createElement('legend', this.ss.schema.title));
         }
         this.ss.forEach(function (name, ss) {
-            children.push(getElement(createElement, ss, name));
+            children.push(getElement.call(_this, createElement, ss, name));
         });
-        return createElement('fieldset', {
-            attrs: {
-                name: this.name,
-                class: 'uk-fieldset',
-            }
-        }, children);
+        return createElement('fieldset', { attrs: { name: this.name } }, children);
     }
 });
 
 SSFieldSet$1['componentName'] = 'ss-field-set';
 
-var defaultComponents = [SSTextField$1, SSCheckbox$1, SSRange$1, SSRadio$1, SSFieldSet$1];
+var SSTextArea$1 = Vue.extend({
+    props: {
+        value: [String, Number],
+        ss: {
+            type: shapeshift_cjs_4,
+            required: true,
+        }
+    },
+    data: function () {
+        return {
+            nestedValue: this.value
+        };
+    },
+    watch: {
+        value: function (newValue) {
+            this.nestedValue = newValue;
+        }
+    },
+    render: function (createElement) {
+        var self = this;
+        var listeners = Object.assign({}, this.$listeners);
+        var input = createElement('textarea', {
+            domProps: {
+                value: this.nestedValue
+            },
+            attrs: {
+                placeholder: this.ss.schema.title,
+            },
+            on: Object.assign(listeners, {
+                input: function (event) {
+                    self.nestedValue = event.target.value;
+                    self.$emit('input', self.nestedValue);
+                }
+            }),
+        });
+        return createElement('div', [input]);
+    }
+});
+
+SSTextArea$1['componentName'] = 'ss-text-area';
+
+var defaultComponents = [SSTextField$1, SSCheckbox$1, SSRange$1, SSRadio$1, SSFieldSet$1, SSTextArea$1];
 var ShapeshiftPlugin = {
     install: function (Vue$$1, options) {
         var components = defaultComponents;

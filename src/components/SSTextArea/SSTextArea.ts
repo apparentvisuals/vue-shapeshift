@@ -1,18 +1,18 @@
 import Vue, { VueConstructor, VNode } from 'vue';
 import { Shapeshift } from '@shapeshift/core';
 
-const SSTextField = Vue.extend({
+const SSTextArea = Vue.extend({
   props: {
     value: [String, Number],
     ss: {
       type: Shapeshift,
       required: true,
-    },
+    }
   },
 
   data() {
     return {
-      nestedValue: this.value,
+      nestedValue: this.value
     }
   },
 
@@ -25,12 +25,11 @@ const SSTextField = Vue.extend({
   render(createElement): VNode {
     const self = this;
     const listeners = Object.assign({}, this.$listeners);
-    const input = createElement('input', {
+    const input = createElement('textarea', {
       domProps: {
-        value: this.nestedValue,
+        value: this.nestedValue
       },
       attrs: {
-        type: 'text',
         placeholder: this.ss.schema.title,
       },
       on: Object.assign(listeners, {
@@ -43,4 +42,4 @@ const SSTextField = Vue.extend({
     return createElement('div', [input]);
   }
 });
-export default SSTextField;
+export default SSTextArea;

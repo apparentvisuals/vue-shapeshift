@@ -1,32 +1,44 @@
-import Vue, { VueConstructor } from 'vue';
+import Vue, { VueConstructor, VNode } from 'vue';
 import { Shapeshift } from '@shapeshift/core';
 
 const SSCheckbox = Vue.extend({
   props: {
+    value: [Boolean],
     ss: {
       type: Shapeshift,
       required: true
     }
   },
-  render(createElement) {
+
+  data() {
+    return {
+      nestedValue: !!this.value
+    }
+  },
+
+  watch: {
+    value(newValue) {
+      this.nestedValue = newValue;
+    }
+  },
+
+  render(createElement): VNode {
+    const self = this;
+    const listeners = Object.assign({}, this.$listeners);
     const input = createElement('input', {
-      attrs: {
-        type: 'checkbox',
-        class: 'uk-checkbox'
-      }
-    });
-
-    const label = createElement('label', {}, [input, ' ' + this.ss.schema.title]);
-
-    return createElement(
-      'div',
-      {
-        attrs: {
-          class: 'uk-margin uk-grid-small uk-child-width-auto uk-grid'
-        }
+      domProps: {
+        value: this.nestedValue
       },
-      [label]
-    );
+      attrs: { type: 'checkbox' },
+      on: Object.assign(listeners, {
+        input: function (event: any) {
+          self.nestedValue = event.target.checked;
+          self.$emit('input', self.nestedValue);
+        }
+      }),
+    });
+    const label = createElement('label', {}, [input, ' ' + this.ss.schema.title]);
+    return createElement('div', [label]);
   }
 });
 export default SSCheckbox;

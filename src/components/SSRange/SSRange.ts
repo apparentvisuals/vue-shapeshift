@@ -10,22 +10,8 @@ const SSRange = Vue.extend({
   },
   render(createElement) {
     const label = createElement('label', this.ss.schema.title);
-    const input = createElement('input', {
-      attrs: {
-        type: 'range',
-        class: 'uk-range'
-      }
-    });
-
-    return createElement(
-      'div',
-      {
-        attrs: {
-          class: 'uk-margin'
-        }
-      },
-      [label, input]
-    );
+    const input = createElement('input', { attrs: { type: 'range' } });
+    return createElement('div', [label, input]);
   }
 });
 export default SSRange;

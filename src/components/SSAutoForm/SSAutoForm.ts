@@ -1,9 +1,10 @@
 import Vue, { VueConstructor, VNode } from 'vue';
 import { shapeshift, Shapeshift } from '@shapeshift/core';
-import { getElement } from '../utils';
+import { getElement, getRootElement } from '../utils';
 
 const SSAutoForm = Vue.extend({
   props: {
+    value: [Object, String, Number],
     schema: {
       type: Object,
       required: true
@@ -11,20 +12,24 @@ const SSAutoForm = Vue.extend({
     uiSchema: {
       type: Object,
       required: true
-    },
-    value: {
-      type: Object,
-      required: true
     }
   },
+
   data() {
     return {
-      triggers: {}
-    };
+      nestedValue: this.value || {}
+    }
   },
-  render(createElement) {
+
+  watch: {
+    value(newValue) {
+      this.nestedValue = newValue;
+    }
+  },
+
+  render(createElement): VNode {
     let ss = shapeshift(this.schema, this.uiSchema);
-    let children = [getElement(createElement, ss)];
+    let children = getRootElement.call(this, createElement, ss);
     return createElement('form', children);
   }
 });
