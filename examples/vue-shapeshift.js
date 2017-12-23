@@ -1,10 +1,19 @@
+var VueShapeshift = (function (Vue) {
 'use strict';
 
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+Vue = Vue && Vue.hasOwnProperty('default') ? Vue['default'] : Vue;
 
-var Vue = _interopDefault(require('vue'));
+function unwrapExports (x) {
+	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+}
 
-var DataType;
+function createCommonjsModule(fn, module) {
+	return module = { exports: {} }, fn(module, module.exports), module.exports;
+}
+
+var shapeshift_cjs = createCommonjsModule(function (module, exports) {
+Object.defineProperty(exports, '__esModule', { value: true });
+
 (function (DataType) {
     DataType.STRING = 'string';
     DataType.OBJECT = 'object';
@@ -13,15 +22,15 @@ var DataType;
     DataType.INTEGER = 'integer';
     DataType.NULL = 'null';
     DataType.ARRAY = 'array';
-})(DataType || (DataType = {}));
+})(exports.DataType || (exports.DataType = {}));
 
-class Shapeshift {
-    constructor(schema, uiSchema) {
+var Shapeshift = (function () {
+    function Shapeshift(schema, uiSchema) {
         this.depth = 0;
-        if (typeof schema !== DataType.OBJECT || schema === null || Array.isArray(uiSchema)) {
+        if (typeof schema !== exports.DataType.OBJECT || schema === null || Array.isArray(uiSchema)) {
             throw new Error('JSON Schema must be an object');
         }
-        if (uiSchema !== undefined && uiSchema !== null && (typeof uiSchema !== DataType.OBJECT || Array.isArray(uiSchema))) {
+        if (uiSchema !== undefined && uiSchema !== null && (typeof uiSchema !== exports.DataType.OBJECT || Array.isArray(uiSchema))) {
             throw new Error('UI Schema must be an object');
         }
         this.schema = schema;
@@ -49,46 +58,49 @@ class Shapeshift {
             }
         }
     }
-    forEach(func) {
-        const schema = this.schema;
-        const uiSchema = this.uiSchema;
-        if (typeof schema !== DataType.OBJECT || schema === null || schema.type !== DataType.OBJECT ||
-            typeof schema.properties !== DataType.OBJECT || schema.properties === null) {
+    Shapeshift.prototype.forEach = function (func) {
+        var _this = this;
+        var schema = this.schema;
+        var uiSchema = this.uiSchema;
+        if (typeof schema !== exports.DataType.OBJECT || schema === null || schema.type !== exports.DataType.OBJECT ||
+            typeof schema.properties !== exports.DataType.OBJECT || schema.properties === null) {
             return;
         }
         if (!Array.isArray(uiSchema.order)) {
-            Object.keys(schema.properties).forEach(key => {
-                const ss = this.getNestedValue(key, schema, uiSchema);
+            Object.keys(schema.properties).forEach(function (key) {
+                var ss = _this.getNestedValue(key, schema, uiSchema);
                 func(key, ss);
             });
             return;
         }
-        uiSchema.order.forEach(key => {
+        uiSchema.order.forEach(function (key) {
             if (schema.properties && schema.properties[key]) {
-                const ss = this.getNestedValue(key, schema, uiSchema);
+                var ss = _this.getNestedValue(key, schema, uiSchema);
                 func(key, ss);
             }
         });
-    }
-    getNestedValue(key, schema, uiSchema) {
-        let property = schema.properties[key];
-        let uiProperty = undefined;
+    };
+    Shapeshift.prototype.getNestedValue = function (key, schema, uiSchema) {
+        var property = schema.properties[key];
+        var uiProperty = undefined;
         if (uiSchema && uiSchema.properties) {
             uiProperty = uiSchema.properties[key];
         }
-        let ss = new Shapeshift(property, uiProperty);
+        var ss = new Shapeshift(property, uiProperty);
         ss.depth = this.depth + 1;
         return ss;
-    }
-}
+    };
+    return Shapeshift;
+}());
 
 function isNumber(data) {
-    return typeof data === DataType.NUMBER && data !== NaN;
+    return typeof data === exports.DataType.NUMBER && data !== NaN;
 }
 function isInteger(data) {
     return isNumber(data) && isMultipleOf(data, 1);
 }
-function isGreaterThan(data, value, exclusive = false) {
+function isGreaterThan(data, value, exclusive) {
+    if (exclusive === void 0) { exclusive = false; }
     if (!isNumber(data)) {
         throw new Error('data is not a number');
     }
@@ -102,7 +114,8 @@ function isGreaterThan(data, value, exclusive = false) {
         return data >= value;
     }
 }
-function isLessThan(data, value, exclusive = false) {
+function isLessThan(data, value, exclusive) {
+    if (exclusive === void 0) { exclusive = false; }
     if (!isNumber(data)) {
         throw new Error('data is not a number');
     }
@@ -127,7 +140,7 @@ function isMultipleOf(data, value) {
 }
 
 function isString(data) {
-    return typeof data === DataType.STRING;
+    return typeof data === exports.DataType.STRING;
 }
 function isMinLength(data, length) {
     if (!isString(data)) {
@@ -154,16 +167,16 @@ function matchPattern(data, pattern) {
     if (!isString(pattern)) {
         throw new Error('pattern is not a string');
     }
-    let regex = new RegExp(pattern);
+    var regex = new RegExp(pattern);
     return regex.test(data);
 }
 
 function isObject(data) {
-    return typeof data === DataType.OBJECT && data !== null && !Array.isArray(data);
+    return typeof data === exports.DataType.OBJECT && data !== null && !Array.isArray(data);
 }
 
 function isBoolean(data) {
-    return typeof data === DataType.BOOL;
+    return typeof data === exports.DataType.BOOL;
 }
 
 function isArray(data) {
@@ -177,27 +190,27 @@ function validate$$1(schema, data) {
     if (data === undefined) {
         throw new Error('data is not defined');
     }
-    let validators = [];
+    var validators = [];
     switch (schema.type) {
-        case DataType.STRING:
+        case exports.DataType.STRING:
             validators.push(validateString$$1(schema, data));
             break;
-        case DataType.NUMBER:
+        case exports.DataType.NUMBER:
             validators.push(validateNumber$$1(schema, data));
             break;
-        case DataType.INTEGER:
+        case exports.DataType.INTEGER:
             validators.push(validateInteger$$1(schema, data));
             break;
-        case DataType.BOOL:
+        case exports.DataType.BOOL:
             validators.push(validateBoolean$$1(schema, data));
             break;
-        case DataType.OBJECT:
+        case exports.DataType.OBJECT:
             validators.push(validateObject$$1(schema, data));
             break;
-        case DataType.ARRAY:
+        case exports.DataType.ARRAY:
             validators.push(validateArray$$1(schema, data));
             break;
-        case DataType.NULL:
+        case exports.DataType.NULL:
             validators.push(data === null);
             break;
         default:
@@ -207,7 +220,7 @@ function validate$$1(schema, data) {
     if (schema.enum) {
         validators.push(validateValueIn$$1(schema.enum, data));
     }
-    return validators.every(result => {
+    return validators.every(function (result) {
         return result;
     });
 }
@@ -215,7 +228,7 @@ function validateString$$1(schema, data) {
     if (!isString(data)) {
         return false;
     }
-    let validators = [];
+    var validators = [];
     if (schema.minLength) {
         validators.push(isMinLength(data, schema.minLength));
     }
@@ -225,7 +238,7 @@ function validateString$$1(schema, data) {
     if (schema.pattern) {
         validators.push(matchPattern(data, schema.pattern));
     }
-    return validators.every(result => {
+    return validators.every(function (result) {
         return result;
     });
 }
@@ -239,19 +252,19 @@ function validateNumber$$1(schema, data) {
     if (!isNumber(data)) {
         return false;
     }
-    let validators = [];
+    var validators = [];
     if (schema.minimum) {
-        let exclusive = schema.exclusiveMinimum || false;
+        var exclusive = schema.exclusiveMinimum || false;
         validators.push(isGreaterThan(data, schema.minimum, exclusive));
     }
     if (schema.maximum) {
-        let exclusive = schema.exclusiveMaximum || false;
+        var exclusive = schema.exclusiveMaximum || false;
         validators.push(isLessThan(data, schema.maximum, exclusive));
     }
     if (schema.multipleOf) {
         validators.push(isMultipleOf(data, schema.multipleOf));
     }
-    return validators.every(result => {
+    return validators.every(function (result) {
         return result;
     });
 }
@@ -287,14 +300,26 @@ function shapeshift(schema, uiSchema) {
     return new Shapeshift(schema, uiSchema);
 }
 
+exports.shapeshift = shapeshift;
+exports.Validators = index;
+exports.Shapeshift = Shapeshift;
+});
+
+unwrapExports(shapeshift_cjs);
+var shapeshift_cjs_1 = shapeshift_cjs.DataType;
+var shapeshift_cjs_2 = shapeshift_cjs.shapeshift;
+var shapeshift_cjs_3 = shapeshift_cjs.Validators;
+var shapeshift_cjs_4 = shapeshift_cjs.Shapeshift;
+
 function getRootElement(createElement, ss) {
+    var _this = this;
     console.log('form(root)');
     if (ss.type === 'object') {
-        let children = [];
-        ss.forEach((name, ss) => {
-            children.push(getElement.call(this, createElement, ss, name));
+        var children_1 = [];
+        ss.forEach(function (name, ss) {
+            children_1.push(getElement.call(_this, createElement, ss, name));
         });
-        return children;
+        return children_1;
     }
     else {
         return [getElement.call(this, createElement, ss)];
@@ -302,7 +327,7 @@ function getRootElement(createElement, ss) {
 }
 function getElement(createElement, ss, name) {
     ssDebug(ss, name);
-    let self = this;
+    var self = this;
     switch (ss.widget) {
         case 'checkbox':
             return createElement('ss-checkbox', {
@@ -310,7 +335,7 @@ function getElement(createElement, ss, name) {
                     value: name ? self.nestedValue[name] : self.nestedValue
                 },
                 props: {
-                    ss,
+                    ss: ss,
                 },
                 on: {
                     input: function (event) {
@@ -331,8 +356,8 @@ function getElement(createElement, ss, name) {
                     value: name ? self.nestedValue[name] : self.nestedValue
                 },
                 props: {
-                    name,
-                    ss,
+                    name: name,
+                    ss: ss,
                 },
                 on: {
                     input: function (event) {
@@ -352,7 +377,7 @@ function getElement(createElement, ss, name) {
                     value: name ? self.nestedValue[name] : self.nestedValue
                 },
                 props: {
-                    ss,
+                    ss: ss,
                 },
                 on: {
                     input: function (event) {
@@ -373,7 +398,7 @@ function getElement(createElement, ss, name) {
                     value: name ? self.nestedValue[name] : self.nestedValue
                 },
                 props: {
-                    ss,
+                    ss: ss,
                 },
                 on: {
                     input: function (event) {
@@ -390,9 +415,9 @@ function getElement(createElement, ss, name) {
     }
 }
 function ssDebug(ss, name) {
-    let level = Array(ss.depth + 1).join(' ') + '|-';
-    let message = '';
-    let type = `(${ss.widget})`;
+    var level = Array(ss.depth + 1).join(' ') + '|-';
+    var message = '';
+    var type = "(" + ss.widget + ")";
     if (name) {
         message = name + type;
     }
@@ -402,7 +427,7 @@ function ssDebug(ss, name) {
     console.log(level, message);
 }
 
-const SSAutoForm$1 = Vue.extend({
+var SSAutoForm$1 = Vue.extend({
     props: {
         value: [Object, String, Number],
         schema: {
@@ -414,45 +439,45 @@ const SSAutoForm$1 = Vue.extend({
             required: true
         }
     },
-    data() {
+    data: function () {
         return {
             nestedValue: this.value || {}
         };
     },
     watch: {
-        value(newValue) {
+        value: function (newValue) {
             this.nestedValue = newValue;
         }
     },
-    render(createElement) {
-        let ss = shapeshift(this.schema, this.uiSchema);
-        let children = getRootElement.call(this, createElement, ss);
+    render: function (createElement) {
+        var ss = shapeshift_cjs_2(this.schema, this.uiSchema);
+        var children = getRootElement.call(this, createElement, ss);
         return createElement('form', children);
     }
 });
 
-const SSTextField$1 = Vue.extend({
+var SSTextField$1 = Vue.extend({
     props: {
         value: [String, Number],
         ss: {
-            type: Shapeshift,
+            type: shapeshift_cjs_4,
             required: true,
         },
     },
-    data() {
+    data: function () {
         return {
             nestedValue: this.value,
         };
     },
     watch: {
-        value(newValue) {
+        value: function (newValue) {
             this.nestedValue = newValue;
         }
     },
-    render(createElement) {
-        const self = this;
-        const listeners = Object.assign({}, this.$listeners);
-        const input = createElement('input', {
+    render: function (createElement) {
+        var self = this;
+        var listeners = Object.assign({}, this.$listeners);
+        var input = createElement('input', {
             domProps: {
                 value: this.nestedValue,
             },
@@ -473,28 +498,28 @@ const SSTextField$1 = Vue.extend({
 
 SSTextField$1['componentName'] = 'ss-text-field';
 
-const SSCheckbox$1 = Vue.extend({
+var SSCheckbox$1 = Vue.extend({
     props: {
         value: [Boolean],
         ss: {
-            type: Shapeshift,
+            type: shapeshift_cjs_4,
             required: true
         }
     },
-    data() {
+    data: function () {
         return {
             nestedValue: !!this.value
         };
     },
     watch: {
-        value(newValue) {
+        value: function (newValue) {
             this.nestedValue = newValue;
         }
     },
-    render(createElement) {
-        const self = this;
-        const listeners = Object.assign({}, this.$listeners);
-        const input = createElement('input', {
+    render: function (createElement) {
+        var self = this;
+        var listeners = Object.assign({}, this.$listeners);
+        var input = createElement('input', {
             domProps: {
                 value: this.nestedValue
             },
@@ -506,14 +531,14 @@ const SSCheckbox$1 = Vue.extend({
                 }
             }),
         });
-        const label = createElement('label', {}, [input, ' ' + this.ss.schema.title]);
+        var label = createElement('label', {}, [input, ' ' + this.ss.schema.title]);
         return createElement('div', [label]);
     }
 });
 
 SSCheckbox$1['componentName'] = 'ss-checkbox';
 
-const SSRadio$1 = Vue.extend({
+var SSRadio$1 = Vue.extend({
     props: {
         schema: {
             type: Object,
@@ -524,57 +549,58 @@ const SSRadio$1 = Vue.extend({
             required: false
         }
     },
-    render(createElement) {
-        const input = createElement('input', { attrs: { type: 'radio' } });
-        const label = createElement('label', {}, [input, ' ' + this.schema.name]);
+    render: function (createElement) {
+        var input = createElement('input', { attrs: { type: 'radio' } });
+        var label = createElement('label', {}, [input, ' ' + this.schema.name]);
         return createElement('div', [label]);
     }
 });
 
 SSRadio$1['componentName'] = 'ss-radio';
 
-const SSRange$1 = Vue.extend({
+var SSRange$1 = Vue.extend({
     props: {
         ss: {
-            type: Shapeshift,
+            type: shapeshift_cjs_4,
             require: true
         }
     },
-    render(createElement) {
-        const label = createElement('label', this.ss.schema.title);
-        const input = createElement('input', { attrs: { type: 'range' } });
+    render: function (createElement) {
+        var label = createElement('label', this.ss.schema.title);
+        var input = createElement('input', { attrs: { type: 'range' } });
         return createElement('div', [label, input]);
     }
 });
 
 SSRange$1['componentName'] = 'ss-range';
 
-const SSFieldSet$1 = Vue.extend({
+var SSFieldSet$1 = Vue.extend({
     props: {
         value: Object,
         name: { type: String },
         ss: {
-            type: Shapeshift,
+            type: shapeshift_cjs_4,
             required: true
         }
     },
-    data() {
+    data: function () {
         return {
             nestedValue: this.value || {}
         };
     },
     watch: {
-        value(newValue) {
+        value: function (newValue) {
             this.nestedValue = newValue;
         }
     },
-    render(createElement) {
-        let children = [];
+    render: function (createElement) {
+        var _this = this;
+        var children = [];
         if (this.ss.schema.title) {
             children.push(createElement('legend', this.ss.schema.title));
         }
-        this.ss.forEach((name, ss) => {
-            children.push(getElement.call(this, createElement, ss, name));
+        this.ss.forEach(function (name, ss) {
+            children.push(getElement.call(_this, createElement, ss, name));
         });
         return createElement('fieldset', { attrs: { name: this.name } }, children);
     }
@@ -582,28 +608,28 @@ const SSFieldSet$1 = Vue.extend({
 
 SSFieldSet$1['componentName'] = 'ss-field-set';
 
-const SSTextArea$1 = Vue.extend({
+var SSTextArea$1 = Vue.extend({
     props: {
         value: [String, Number],
         ss: {
-            type: Shapeshift,
+            type: shapeshift_cjs_4,
             required: true,
         }
     },
-    data() {
+    data: function () {
         return {
             nestedValue: this.value
         };
     },
     watch: {
-        value(newValue) {
+        value: function (newValue) {
             this.nestedValue = newValue;
         }
     },
-    render(createElement) {
-        const self = this;
-        const listeners = Object.assign({}, this.$listeners);
-        const input = createElement('textarea', {
+    render: function (createElement) {
+        var self = this;
+        var listeners = Object.assign({}, this.$listeners);
+        var input = createElement('textarea', {
             domProps: {
                 value: this.nestedValue
             },
@@ -623,18 +649,20 @@ const SSTextArea$1 = Vue.extend({
 
 SSTextArea$1['componentName'] = 'ss-text-area';
 
-const defaultComponents = [SSTextField$1, SSCheckbox$1, SSRange$1, SSRadio$1, SSFieldSet$1, SSTextArea$1];
-const ShapeshiftPlugin = {
-    install(Vue$$1, options) {
-        let components = defaultComponents;
+var defaultComponents = [SSTextField$1, SSCheckbox$1, SSRange$1, SSRadio$1, SSFieldSet$1, SSTextArea$1];
+var ShapeshiftPlugin = {
+    install: function (Vue$$1, options) {
+        var components = defaultComponents;
         if (options && options.components) {
             components = options.components;
         }
-        components.forEach(component => {
+        components.forEach(function (component) {
             Vue$$1.component(component['componentName'], component);
         });
         Vue$$1.component('ss-auto-form', SSAutoForm$1);
     }
 };
 
-module.exports = ShapeshiftPlugin;
+return ShapeshiftPlugin;
+
+}(Vue));
