@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@shapeshift/core@github:shapeshiftjs/shapeshift-core#develop":
+"@shapeshift/core@latest":
   version "1.0.0-alpha.1"
-  resolved "https://codeload.github.com/shapeshiftjs/shapeshift-core/tar.gz/69eb03e7f1c1844084ae44c6e177f5c2d4093bb9"
+  resolved "https://registry.yarnpkg.com/@shapeshift/core/-/core-1.0.0-alpha.1.tgz#9cabb7101ac846c9491649bee75f3860e0f5aa97"
 
 "@types/json-schema@^6.0.0":
   version "6.0.0"
